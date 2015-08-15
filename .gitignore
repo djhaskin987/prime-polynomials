@@ -9,3 +9,5 @@ buildNumber.properties
 \#*
 *~
 .*.sw*
+jgap.jar
+*.class

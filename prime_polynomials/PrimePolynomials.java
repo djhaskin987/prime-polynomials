@@ -17,6 +17,8 @@ import org.jgap.data.*;
 import org.jgap.impl.*;
 import org.jgap.xml.*;
 import org.w3c.dom.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * This class provides an implementation of the classic "Make change" problem
@@ -39,12 +41,8 @@ import org.w3c.dom.*;
  */
 public class PrimePolynomials {
 
-    /**
-     * The total number of times we'll let the population evolve.
-     */
-    private static final int MAX_ALLOWED_EVOLUTIONS = 50000;
-
     public static EvolutionMonitor m_monitor;
+    private static final Integer termCount = 3;
 
     /**
      * Executes the genetic algorithm to determine the minimum number of
@@ -62,7 +60,9 @@ public class PrimePolynomials {
      * @author Klaus Meffert
      * @since 1.0
      */
-    public static void getPolynomial(boolean a_doMonitor, Integer termCount)
+    public static void getPolynomial(Integer populationSize,
+                                     Integer iterations,
+                                     boolean a_doMonitor)
         throws Exception {
         // Start with a DefaultConfiguration, which comes setup with the
         // most common settings.
@@ -80,7 +80,7 @@ public class PrimePolynomials {
         // the target amount of change passed in to this method.
         // ---------------------------------------------------------
         FitnessFunction myFunc =
-            new PrimePolynomialsFitnessFunction(termCount);
+            new PrimePolynomialsFitnessFunction();
         conf.setFitnessFunction(myFunc);
         if (a_doMonitor) {
             // Turn on monitoring/auditing of evolution progress.
@@ -100,9 +100,10 @@ public class PrimePolynomials {
         // to sensible values for each coin type.
         // --------------------------------------------------------------
         Gene[] sampleGenes = new Gene[termCount.intValue()];
-        for (int i = 0; i < termCount.intValue(); i++) {
-            sampleGenes[i] = new DoubleGene(conf, -100, 100); // Constant
-        }
+        sampleGenes[0] = new IntegerGene(conf, -100, 100);
+        sampleGenes[1] = new IntegerGene(conf, -100, 100);
+        sampleGenes[2] = new DoubleGene(conf, 0.0, 4.0);
+
         IChromosome sampleChromosome = new Chromosome(conf, sampleGenes);
         conf.setSampleChromosome(sampleChromosome);
         // Finally, we need to tell the Configuration object how many
@@ -111,7 +112,7 @@ public class PrimePolynomials {
         // finding the answer), but the longer it will take to evolve
         // the population (which could be seen as bad).
         // ------------------------------------------------------------
-        conf.setPopulationSize(200);
+        conf.setPopulationSize(populationSize);
 
         // Create random initial population of Chromosomes.
         // Here we try to read in a previous run via XMLManager.readFile(..)
@@ -124,7 +125,7 @@ public class PrimePolynomials {
         // is going to be, we just evolve the max number of times.
         // ---------------------------------------------------------------
         long startTime = System.currentTimeMillis();
-        for (int i = 0; i < MAX_ALLOWED_EVOLUTIONS; i++) {
+        for (int i = 0; i < iterations; i++) {
             if (!uniqueChromosomes(population.getPopulation())) {
                 throw new RuntimeException("Invalid state in generation "+i);
             }
@@ -160,8 +161,7 @@ public class PrimePolynomials {
         System.out.println("It contains the following: ");
         for (int i = 0; i < termCount.intValue(); i++) {
             System.out.println("Term " + i + ":\t" +
-                               PrimePolynomialsFitnessFunction.get(
-                                   bestSolutionSoFar, i));
+                               bestSolutionSoFar.getGene(i).getAllele());
         }
     }
 
@@ -179,20 +179,43 @@ public class PrimePolynomials {
      */
     public static void main(String[] args)
         throws Exception {
+        Pattern popArgument = Pattern.compile("^(-p|--population-size(=([\\d]+)))?$");
+        Integer population = 200;
+        Pattern iterationsArgument = Pattern.compile("^(-t|--iterations(=([\\d]+)))?$");
+        Integer iterations = 3000;
         boolean doMonitor = false;
-        Integer termCount = 3;
-        if (args.length > 0) {
-            termCount = new Integer(args[0]);
-        } else {
-            termCount = new Integer(3);
-        }
-        if (args.length > 1) {
-            String monitoring = args[0];
-            if(monitoring != null && monitoring.equals("MONITOR")) {
+        int argptr = 0;
+        while (args.length > argptr) {
+            Matcher popCheck = popArgument.matcher(args[argptr]);
+            if (popCheck.matches()) {
+                argptr++;
+                String popStr = popCheck.group(3);
+                if (popStr != null) {
+                    population = new Integer(popStr);
+                } else {
+                    population = new Integer(args[argptr]);
+                    argptr++;
+                }
+                continue;
+            }
+            Matcher iterationsCheck = iterationsArgument.matcher(args[argptr]);
+            if (iterationsCheck.matches()) {
+                argptr++;
+                String iterationsStr = iterationsCheck.group(3);
+                if (iterationsStr != null) {
+                    iterations = new Integer(iterationsStr);
+                } else {
+                    iterations = new Integer(args[argptr]);
+                    argptr++;
+                }
+                continue;
+            }
+            String monitoring = args[argptr];
+            if (monitoring != null && monitoring.equals("MONITOR")) {
                 doMonitor = true;
             }
         }
-        getPolynomial(doMonitor, termCount);
+        getPolynomial(population, iterations, doMonitor);
     }
 
 /**

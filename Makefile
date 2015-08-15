@@ -1,0 +1,2 @@
+all: prime_polynomials/PrimePolynomials.java prime_polynomials/PrimePolynomialsFitnessFunction.java
+	javac -classpath ./jgap.jar prime_polynomials/PrimePolynomials.java prime_polynomials/PrimePolynomialsFitnessFunction.java

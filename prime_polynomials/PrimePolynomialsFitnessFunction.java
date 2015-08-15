@@ -130,10 +130,8 @@ public class PrimePolynomialsFitnessFunction
         7841,   7853,   7867,   7873,   7877,   7879,   7883,   7901,   7907,   7919 };
 
     private final Set<Integer> primeSet;
-    private final Integer termCount;
 
-    public PrimePolynomialsFitnessFunction(Integer tc) {
-        this.termCount = tc;
+    public PrimePolynomialsFitnessFunction() {
         this.primeSet = new HashSet<Integer>();
         for (int i = 0; i < PrimePolynomialsFitnessFunction.primes.length; i++) {
             this.primeSet.add(PrimePolynomialsFitnessFunction.primes[i]);
@@ -157,36 +155,17 @@ public class PrimePolynomialsFitnessFunction
         for (int i = 0; i < 1000; i++)
         {
             int sum = 0;
-            for (int j = 0; j < this.termCount.intValue(); j++) {
-                double termA = PrimePolynomialsFitnessFunction.get(a_subject, j);
-                double termB = PrimePolynomialsFitnessFunction.get(a_subject,
-                        (this.termCount.intValue() / 2) + j);
-                for (int k = 0; k < j; k++) {
-                    termA *= (double)i;
-                    termB *= (double)i;
-                }
-                sum += term;
+            double termA = ((Integer) a_subject.getGene(
+                                0).getAllele()).doubleValue();
+            double termB = ((Integer) a_subject.getGene(
+                                1).getAllele()).doubleValue();
+            double termC = ((Double) a_subject.getGene(
+                                2).getAllele()).doubleValue();
+            int candidate = (int)Math.abs(termA + termB*Math.pow((double)i, termC));
+            if (this.primeSet.contains(candidate)) {
+                foundPrimes.add(candidate);
             }
         }
         return ((double)foundPrimes.size());
-    }
-
-    /**
-     * Retrieves the number of coins represented by the given potential
-     * solution at the given gene position.
-     *
-     * @param a_potentialSolution the potential solution to evaluate
-     * @param a_position the gene position to evaluate
-     * @return the number of coins represented by the potential solution at the
-     * given gene position
-     *
-     * @author Neil Rotstan
-     * @since 1.0
-     */
-    public static double get(IChromosome a_potentialSolution,
-                                             int a_position) {
-        Double num =
-            (Double) a_potentialSolution.getGene(a_position).getAllele();
-        return num.doubleValue();
     }
 }
